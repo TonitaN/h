@@ -1,0 +1,247 @@
+**
+** Тоне от Саши (исправленная версия)
+**
+**
+** Запуск программы:
+**
+** refgo имя-программы [width]
+**
+** где width — ширина картинки (по умолчанию 80 колонок)
+**
+
+
+*
+* Рациональная арифметика
+*
+
+GCD {
+  (0) e.Y = e.Y;
+  (e.X) 0 = e.X;
+  (e.X) e.Y = <GCD (e.Y) <Mod (e.X) e.Y>>
+}
+
+Rat {
+  (e.N) e.D = ((<Div (e.N) <GCD (e.N) e.D>>) <Div (e.D) <GCD (e.N) e.D>>);
+}
+
+AddR {
+  t.X t.Y = <AddSubR Add t.X t.Y>;
+}
+
+SubR {
+  t.X t.Y = <AddSubR Sub t.X t.Y>;
+}
+
+AddSubR {
+  s.Op ((e.N1) e.D1) ((e.N2) e.D2) =
+    <Rat
+      (<Mu s.Op (<Mul (e.N1) e.D2>) <Mul (e.D1) e.N2>>)
+      <Mul (e.D1) e.D2>
+    >;
+}
+
+MulR {
+  ((e.N1) e.D1) ((e.N2) e.D2) = <Rat (<Mul (e.N1) e.N2>) <Mul (e.D1) e.D2>>;
+
+  t.X t.Y e.Numbers = <MulR t.X <MulR t.Y e.Numbers>>;
+}
+
+DivR {
+  ((e.N1) e.D1) ((e.N2) e.D2) = <Rat (<Mul (e.N1) e.D2>) <Mul (e.D1) e.N2>>;
+}
+
+CompareR {
+  ((e.N1) e.D1) ((e.N2) e.D2) = <Compare (<Mul (e.N1) e.D2>) <Mul e.D1 e.N2>>;
+}
+
+Square {
+  t.X = <MulR t.X t.X>;
+}
+
+AbsSubR {
+  t.X t.Y = <AbsSubR-SwSign <CompareR t.X t.Y> t.X t.Y>;
+}
+
+AbsSubR-SwSign {
+  '-' t.X t.Y = <SubR t.Y t.X>;
+  '0' t.X t.Y = ((0) 1);
+  '+' t.X t.Y = <SubR t.X t.Y>;
+}
+
+
+*
+* Рисовалка векторных фигур
+*
+
+Color {
+  (s.Shape e.Args) t.X t.Y = <Mu s.Shape e.Args t.X t.Y>;
+}
+
+Draw {
+  s.Width t.Shape =
+    <DrawLines <Div <Add s.Width 1> 2> s.Width t.Shape>
+}
+
+DrawLines {
+  s.TotalLines s.Width t.Shape =
+    <DoDrawLines s.TotalLines s.TotalLines s.Width t.Shape>
+}
+
+DoDrawLines {
+  0 s.TotalLines s.Width t.Shape =
+    <DrawLine ((0) 1) s.Width t.Shape>;
+
+  s.Line s.TotalLines s.Width t.Shape =
+    <DrawLine <Rat (s.Line) s.TotalLines> s.Width t.Shape>
+    <DoDrawLines <Sub s.Line 1> s.TotalLines s.Width t.Shape>;
+}
+
+DrawLine {
+  t.Y s.Width t.Shape =
+    <Prout <DoDrawLine t.Y 0 s.Width t.Shape>>
+}
+
+DoDrawLine {
+  t.Y s.Width s.Width t.Shape = <Color t.Shape ((1) 1) t.Y>;
+
+  t.Y s.Col s.Width t.Shape =
+    <Color t.Shape <Rat (s.Col) s.Width> t.Y>
+    <DoDrawLine t.Y <Add s.Col 1> s.Width t.Shape>;
+}
+
+Circle {
+  s.Color t.R t.Cx t.Cy t.X t.Y =
+    <Circle-SwCompare
+      s.Color
+      <CompareR
+        <AddR <Square <AbsSubR t.Cx t.X>> <Square <AbsSubR t.Cy t.Y>>>
+        <Square t.R>
+      >
+    >;
+}
+
+Circle-SwCompare {
+  s.Color '-' = s.Color;
+  s.Color '0' = s.Color;
+  s.Color s.Other = ' ';
+}
+
+Union {
+  t.Shape e.Shapes t.X t.Y =
+    <Union-SwShape
+      <Color t.Shape t.X t.Y> e.Shapes t.X t.Y
+    >;
+
+  /* нет фигур */ t.X t.Y = ' ';
+}
+
+Union-SwShape {
+  ' ' e.Shapes t.X t.Y = <Union e.Shapes t.X t.Y>;
+  s.Color e.Shapes t.X t.Y = s.Color;
+}
+
+Semiplane {
+  s.Color s.Sign t.A s.Op t.B t.C t.X t.Y =
+    <Semiplane-SwCompare
+      s.Color s.Sign
+      <CompareR <Mu s.Op <MulR t.A t.X> <MulR t.B t.Y>> t.C>
+   >;
+}
+
+Semiplane-SwCompare {
+  s.Color s.Sign s.Sign = s.Color;
+  s.Color s.Sign s.Other = ' ';
+}
+
+CalcSemiplane {
+  t.X1 t.Y1 t.X2 t.Y2 s.Color s.Sign s.Op =
+    <CalcSemiplane-Aux
+      s.Color s.Sign
+      <AbsSubR t.Y1 t.Y2> s.Op <AbsSubR t.X1 t.X2>
+      t.X1 t.Y1
+    >;
+}
+
+CalcSemiplane-Aux {
+  s.Color s.Sign t.A s.Op t.B t.X1 t.Y1 =
+    (Semiplane
+      s.Color s.Sign t.A s.Op t.B
+      <Mu s.Op <MulR t.A t.X1> <MulR t.B t.Y1>>
+    );
+}
+
+Intersect {
+  s.Color t.Shape e.Shapes t.X t.Y =
+    <Intersect-SwShape
+      s.Color <Color t.Shape t.X t.Y> e.Shapes t.X t.Y
+    >;
+
+  s.Color /* нет фигур */ t.X t.Y = s.Color;
+}
+
+Intersect-SwShape {
+  s.Color ' ' e.Shapes t.X t.Y = ' ';
+  s.Color s.ShapeColor e.Shapes t.X t.Y = <Intersect s.Color e.Shapes t.X t.Y>;
+}
+
+FlipH {
+  t.AxisX t.Shape t.X t.Y =
+    <Color t.Shape <SubR <MulR ((2) 1) t.AxisX> t.X> t.Y>;
+}
+
+
+*
+* Параметры фигуры (их можно менять)
+*
+
+R { = ((2) 10) }
+H { = ((7) 10) }
+D { = ((6) 10) }
+
+C1x { = <SubR ((1) 2) <R>> }
+C2x { = <AddR ((1) 2) <R>> }
+
+DX {
+  = <DivR
+      <MulR ((2) 1) <D> <D> <R>>
+      <AddR <Square <R>> <Square <D>>>
+    >
+}
+
+DY {
+  = <DivR
+      <MulR <D> <SubR <Square <D>> <Square <R>>>>
+      <AddR <Square <R>> <Square <D>>>
+    >;
+}
+
+X1 { = <SubR ((1) 2) <DX>> }
+X2 { = <AddR ((1) 2) <DX>> }
+YH { = <AddR <YL> <DY>> }
+YL { = <SubR <H> <D>> }
+
+$ENTRY Go {
+  = <Draw
+      <Width>
+      (Union
+        (Circle '@' <R> <C1x> <H>)
+        (Circle '@' <R> <C2x> <H>)
+        (Intersect
+          '@'
+          <CalcSemiplane <X1> <YH> ((1) 2) <YL> '*' '+' AddR>
+          (FlipH ((1) 2) <CalcSemiplane <X1> <YH> ((1) 2) <YL> '*' '+' AddR>)
+          <CalcSemiplane <X2> <YH> ((1) 2) <H> '*' '-' AddR>
+         (FlipH ((1) 2) <CalcSemiplane <X2> <YH> ((1) 2) <H> '*' '-' AddR>)
+        )
+      )
+    >
+}
+
+Width {
+  = <Width-SwDefined <Numb <Arg 1>>>
+}
+
+Width-SwDefined {
+  0 = 80;
+  s.Width = s.Width;
+}
