@@ -128,6 +128,23 @@ DoDrawLine {
     <DoDrawLine t.Y <Add s.Col 1> s.Width t.Shape>;
 }
 
+*
+* Объектно-ориентированные графические примитивы
+*
+* t.Shape ::= (s.Tag e.Info)
+* <Mu s.Tag e.Info t.X t.Y> ::= s.Color
+* s.Color ::= s.CHAR
+*
+* Цвет заливки — символ. Пробел считается «прозрачным» цветом.
+*
+
+/*
+  Круг
+
+  t.Circle ::= (Circle s.Color t.R t.Cx t.Cy)
+  t.R ::= t.Number -- радиус
+  t.Cx, t.Cy ::= t.Number -- координаты центра
+*/
 Circle {
   s.Color t.R t.Cx t.Cy t.X t.Y =
     <Circle-SwCompare
@@ -145,6 +162,11 @@ Circle-SwCompare {
   s.Color s.Other = ' ';
 }
 
+/*
+  Объединение фигур
+
+  t.Union ::= (Union t.Shape*)
+*/
 Union {
   t.Shape e.Shapes t.X t.Y =
     <Union-SwShape
@@ -159,6 +181,17 @@ Union-SwShape {
   s.Color e.Shapes t.X t.Y = s.Color;
 }
 
+/*
+  Полуплоскость.
+
+  Прямая на плоскости задаётся как A·x+B·y+C=0. Полуплоскость раскрашивает
+  плоскость в два цвета: первый цвет, где A·x+B·y+C >= 0, второй — < 0.
+
+  t.Semiplane ::= (Semiplane s.ColorP s.ColorN t.A t.B t.C)
+
+  t.A, t.B, t.C ::= t.Number
+  s.ColorP, s.ColorN ::= s.Color
+*/
 Semiplane {
   s.ColorP s.ColorN t.A t.B t.C  t.X t.Y
     , <AddF <MulF t.A t.X> <MulF t.B t.Y> t.C>
@@ -168,6 +201,12 @@ Semiplane {
       };
 }
 
+/*
+  <CalcSemiplane t.X1 t.Y1 t.X2 t.Y2 s.ColorP s.ColorN> == t.Semiplane
+
+  Строит полуплоскость по вектору (t.X1 t.Y1) - (t.X2 t.Y2).
+  Если смотреть по направлению вектора, то первый цвет слева, второй справа.
+*/
 CalcSemiplane {
   t.X1 t.Y1 t.X2 t.Y2 s.ColorP s.ColorN
 * https://ru.wikipedia.org/wiki/Прямая#Уравнение_прямой,_проходящей_
@@ -180,6 +219,14 @@ CalcSemiplane {
       );
 }
 
+/*
+  Пересечение фигур
+
+  t.Intersect ::= (Intersect s.Color t.Shape*)
+
+  Цвет фигуры пересечения определяется цветом s.Color, не зависит
+  от цветов самих фигур.
+*/
 Intersect {
   s.Color t.Shape e.Shapes t.X t.Y =
     <Intersect-SwShape
