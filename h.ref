@@ -11,47 +11,83 @@
 
 
 *
-* Рациональная арифметика
+* Знаковая арифметика с фиксированной запятой, совместимая с Рефалом-05.
+* Точность вычислений 0,001
+*
+* t.Number ::= (s.Sign s.Rep)
+* s.Sign ::= '+' | '-'
+* s.Rep ::= s.NUMBER
+*
+* s.Rep — число тысячных.
+* Знак нуля должен быть '+', т.е. ('-' 0) — недопустимое значение.
 *
 
-GCD {
-  (0) e.Y = e.Y;
-  (e.X) 0 = e.X;
-  (e.X) e.Y = <GCD (e.Y) <Mod (e.X) e.Y>>
+fromRat {
+  ((s.Num) s.Denom) = <Rat (s.Num) s.Denom>;
+
+  ('+' s.X) = ('+' s.X);
+  ('-' s.X) = ('-' s.X);
 }
 
 Rat {
-  (e.N) e.D = ((<Div (e.N) <GCD (e.N) e.D>>) <Div (e.D) <GCD (e.N) e.D>>);
+  (s.Num) s.Denom = ('+' </ <* s.Num 1000> s.Denom>);
 }
 
 AddR {
-  t.X t.Y = <AddSubR Add t.X t.Y>;
+  (s.S s.X) (s.S s.Y) = (s.S <+ s.X s.Y>);
+  ('+' s.X) ('-' s.Y) = <WrapSign <- s.X s.Y>>;
+  ('-' s.X) ('+' s.Y) = <WrapSign <- s.Y s.X>>;
+
+  t.X t.Y = <AddR <fromRat t.X> <fromRat t.Y>>;
+}
+
+WrapSign {
+  '-' s.X = ('-' s.X);
+  s.X = ('+' s.X);
 }
 
 SubR {
-  t.X t.Y = <AddSubR Sub t.X t.Y>;
-}
+  ('+' s.X) ('+' s.Y) = <WrapSign <- s.X s.Y>>;
+  ('+' s.X) ('-' s.Y) = ('+' <+ s.X s.Y>);
+  ('-' s.X) ('+' s.Y) = ('-' <+ s.X s.Y>);
+  ('-' s.X) ('-' s.Y) = <WrapSign <- s.Y s.X>>;
 
-AddSubR {
-  s.Op ((e.N1) e.D1) ((e.N2) e.D2) =
-    <Rat
-      (<Mu s.Op (<Mul (e.N1) e.D2>) <Mul (e.D1) e.N2>>)
-      <Mul (e.D1) e.D2>
-    >;
+  t.X t.Y = <SubR <fromRat t.X> <fromRat t.Y>>;
 }
 
 MulR {
-  ((e.N1) e.D1) ((e.N2) e.D2) = <Rat (<Mul (e.N1) e.N2>) <Mul (e.D1) e.D2>>;
+  (s.S s.X) (s.S s.Y) = ('+' </ <* s.X s.Y> 1000>);
+  (s.a s.X) (s.b s.Y)
+    , <* s.X s.Y>
+    : {
+        0 = ('+' 0);
+        s.Mul = ('-' </ s.Mul 1000>);
+      };
+
+  t.X t.Y = <MulR <fromRat t.X> <fromRat t.Y>>;
 
   t.X t.Y e.Numbers = <MulR t.X <MulR t.Y e.Numbers>>;
 }
 
 DivR {
-  ((e.N1) e.D1) ((e.N2) e.D2) = <Rat (<Mul (e.N1) e.D2>) <Mul (e.D1) e.N2>>;
+  (s.S s.X) (s.S s.Y) = ('+' </ <* s.X 1000> s.Y>);
+  (s.a s.X) (s.b s.Y)
+    , </ <* s.X 1000> s.Y>
+    : {
+        0 = ('+' 0);
+        s.Div = ('-' s.Div);
+      };
+
+  t.X t.Y = <DivR <fromRat t.X> <fromRat t.Y>>;
 }
 
 CompareR {
-  ((e.N1) e.D1) ((e.N2) e.D2) = <Compare (<Mul (e.N1) e.D2>) <Mul e.D1 e.N2>>;
+  ('+' s.X) ('+' s.Y) = <Compare s.X s.Y>;
+  ('+' s.X) ('-' s.Y) = '+';
+  ('-' s.X) ('+' s.Y) = '-';
+  ('-' s.X) ('-' s.Y) = <Compare s.Y s.X>;
+
+  t.X t.Y = <CompareR <fromRat t.X> <fromRat t.Y>>;
 }
 
 Square {
@@ -59,13 +95,11 @@ Square {
 }
 
 AbsSubR {
-  t.X t.Y = <AbsSubR-SwSign <CompareR t.X t.Y> t.X t.Y>;
+  t.X t.Y = <AbsR <SubR t.X t.Y>>;
 }
 
-AbsSubR-SwSign {
-  '-' t.X t.Y = <SubR t.Y t.X>;
-  '0' t.X t.Y = ((0) 1);
-  '+' t.X t.Y = <SubR t.X t.Y>;
+AbsR {
+  (s.S s.X) = ('+' s.X);
 }
 
 
