@@ -30,6 +30,8 @@ AddF {
   (s.S s.X) (s.S s.Y) = (s.S <+ s.X s.Y>);
   ('+' s.X) ('-' s.Y) = <WrapSign <- s.X s.Y>>;
   ('-' s.X) ('+' s.Y) = <WrapSign <- s.Y s.X>>;
+
+  t.X t.Y e.Numbers = <AddF t.X <AddF t.Y e.Numbers>>;
 }
 
 WrapSign {
@@ -158,33 +160,24 @@ Union-SwShape {
 }
 
 Semiplane {
-  s.Color s.Sign t.A s.Op t.B t.C t.X t.Y =
-    <Semiplane-SwCompare
-      s.Color s.Sign
-      <CompareF <Mu s.Op <MulF t.A t.X> <MulF t.B t.Y>> t.C>
-   >;
-}
-
-Semiplane-SwCompare {
-  s.Color s.Sign s.Sign = s.Color;
-  s.Color s.Sign s.Other = ' ';
+  s.ColorP s.ColorN t.A t.B t.C  t.X t.Y
+    , <AddF <MulF t.A t.X> <MulF t.B t.Y> t.C>
+    : {
+        ('+' s.N) = s.ColorP;
+        ('-' s.N) = s.ColorN;
+      };
 }
 
 CalcSemiplane {
-  t.X1 t.Y1 t.X2 t.Y2 s.Color s.Sign s.Op =
-    <CalcSemiplane-Aux
-      s.Color s.Sign
-      <AbsSubF t.Y1 t.Y2> s.Op <AbsSubF t.X1 t.X2>
-      t.X1 t.Y1
-    >;
-}
-
-CalcSemiplane-Aux {
-  s.Color s.Sign t.A s.Op t.B t.X1 t.Y1 =
-    (Semiplane
-      s.Color s.Sign t.A s.Op t.B
-      <Mu s.Op <MulF t.A t.X1> <MulF t.B t.Y1>>
-    );
+  t.X1 t.Y1 t.X2 t.Y2 s.ColorP s.ColorN
+* https://ru.wikipedia.org/wiki/Прямая#Уравнение_прямой,_проходящей_
+* через_две_заданные_несовпадающие_точки
+    = (Semiplane
+        s.ColorP s.ColorN
+        <SubF t.Y1 t.Y2>
+        <SubF t.X2 t.X1>
+        <SubF <MulF t.X1 t.Y2> <MulF t.X2 t.Y1>>
+      );
 }
 
 Intersect {
@@ -199,11 +192,6 @@ Intersect {
 Intersect-SwShape {
   s.Color ' ' e.Shapes t.X t.Y = ' ';
   s.Color s.ShapeColor e.Shapes t.X t.Y = <Intersect s.Color e.Shapes t.X t.Y>;
-}
-
-FlipH {
-  t.AxisX t.Shape t.X t.Y =
-    <Color t.Shape <SubF <MulF ('+' 2000) t.AxisX> t.X> t.Y>;
 }
 
 
@@ -245,10 +233,10 @@ $ENTRY Go {
         (Circle '@' <R> <C2x> <H>)
         (Intersect
           '@'
-          <CalcSemiplane <X1> <YH> ('+' 500) <YL> '*' '+' AddF>
-          (FlipH ('+' 500) <CalcSemiplane <X1> <YH> ('+' 500) <YL> '*' '+' AddF>)
-          <CalcSemiplane <X2> <YH> ('+' 500) <H> '*' '-' AddF>
-         (FlipH ('+' 500) <CalcSemiplane <X2> <YH> ('+' 500) <H> '*' '-' AddF>)
+          <CalcSemiplane <X1> <YH> ('+' 500) <YL> '+ '>
+          <CalcSemiplane ('+' 500) <YL> <X2> <YH> '+ '>
+          <CalcSemiplane <X2> <YH> ('+' 500) <H> '+ '>
+          <CalcSemiplane <X1> <YH> ('+' 500) <H> ' +'>
         )
       )
     >
