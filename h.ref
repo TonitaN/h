@@ -26,7 +26,7 @@ Rat {
   (s.Num) s.Denom = ('+' </ <* s.Num 1000> s.Denom>);
 }
 
-AddR {
+AddF {
   (s.S s.X) (s.S s.Y) = (s.S <+ s.X s.Y>);
   ('+' s.X) ('-' s.Y) = <WrapSign <- s.X s.Y>>;
   ('-' s.X) ('+' s.Y) = <WrapSign <- s.Y s.X>>;
@@ -37,14 +37,14 @@ WrapSign {
   s.X = ('+' s.X);
 }
 
-SubR {
+SubF {
   ('+' s.X) ('+' s.Y) = <WrapSign <- s.X s.Y>>;
   ('+' s.X) ('-' s.Y) = ('+' <+ s.X s.Y>);
   ('-' s.X) ('+' s.Y) = ('-' <+ s.X s.Y>);
   ('-' s.X) ('-' s.Y) = <WrapSign <- s.Y s.X>>;
 }
 
-MulR {
+MulF {
   (s.S s.X) (s.S s.Y) = ('+' </ <* s.X s.Y> 1000>);
   (s.a s.X) (s.b s.Y)
     , <* s.X s.Y>
@@ -53,10 +53,10 @@ MulR {
         s.Mul = ('-' </ s.Mul 1000>);
       };
 
-  t.X t.Y e.Numbers = <MulR t.X <MulR t.Y e.Numbers>>;
+  t.X t.Y e.Numbers = <MulF t.X <MulF t.Y e.Numbers>>;
 }
 
-DivR {
+DivF {
   (s.S s.X) (s.S s.Y) = ('+' </ <* s.X 1000> s.Y>);
   (s.a s.X) (s.b s.Y)
     , </ <* s.X 1000> s.Y>
@@ -66,7 +66,7 @@ DivR {
       };
 }
 
-CompareR {
+CompareF {
   ('+' s.X) ('+' s.Y) = <Compare s.X s.Y>;
   ('+' s.X) ('-' s.Y) = '+';
   ('-' s.X) ('+' s.Y) = '-';
@@ -74,14 +74,14 @@ CompareR {
 }
 
 Square {
-  t.X = <MulR t.X t.X>;
+  t.X = <MulF t.X t.X>;
 }
 
-AbsSubR {
-  t.X t.Y = <AbsR <SubR t.X t.Y>>;
+AbsSubF {
+  t.X t.Y = <AbsF <SubF t.X t.Y>>;
 }
 
-AbsR {
+AbsF {
   (s.S s.X) = ('+' s.X);
 }
 
@@ -130,8 +130,8 @@ Circle {
   s.Color t.R t.Cx t.Cy t.X t.Y =
     <Circle-SwCompare
       s.Color
-      <CompareR
-        <AddR <Square <AbsSubR t.Cx t.X>> <Square <AbsSubR t.Cy t.Y>>>
+      <CompareF
+        <AddF <Square <AbsSubF t.Cx t.X>> <Square <AbsSubF t.Cy t.Y>>>
         <Square t.R>
       >
     >;
@@ -161,7 +161,7 @@ Semiplane {
   s.Color s.Sign t.A s.Op t.B t.C t.X t.Y =
     <Semiplane-SwCompare
       s.Color s.Sign
-      <CompareR <Mu s.Op <MulR t.A t.X> <MulR t.B t.Y>> t.C>
+      <CompareF <Mu s.Op <MulF t.A t.X> <MulF t.B t.Y>> t.C>
    >;
 }
 
@@ -174,7 +174,7 @@ CalcSemiplane {
   t.X1 t.Y1 t.X2 t.Y2 s.Color s.Sign s.Op =
     <CalcSemiplane-Aux
       s.Color s.Sign
-      <AbsSubR t.Y1 t.Y2> s.Op <AbsSubR t.X1 t.X2>
+      <AbsSubF t.Y1 t.Y2> s.Op <AbsSubF t.X1 t.X2>
       t.X1 t.Y1
     >;
 }
@@ -183,7 +183,7 @@ CalcSemiplane-Aux {
   s.Color s.Sign t.A s.Op t.B t.X1 t.Y1 =
     (Semiplane
       s.Color s.Sign t.A s.Op t.B
-      <Mu s.Op <MulR t.A t.X1> <MulR t.B t.Y1>>
+      <Mu s.Op <MulF t.A t.X1> <MulF t.B t.Y1>>
     );
 }
 
@@ -203,7 +203,7 @@ Intersect-SwShape {
 
 FlipH {
   t.AxisX t.Shape t.X t.Y =
-    <Color t.Shape <SubR <MulR ('+' 2000) t.AxisX> t.X> t.Y>;
+    <Color t.Shape <SubF <MulF ('+' 2000) t.AxisX> t.X> t.Y>;
 }
 
 
@@ -215,27 +215,27 @@ R { = ('+' 200) }
 H { = ('+' 700) }
 D { = ('+' 600) }
 
-C1x { = <SubR ('+' 500) <R>> }
-C2x { = <AddR ('+' 500) <R>> }
+C1x { = <SubF ('+' 500) <R>> }
+C2x { = <AddF ('+' 500) <R>> }
 
 DX {
-  = <DivR
-      <MulR ('+' 2000) <D> <D> <R>>
-      <AddR <Square <R>> <Square <D>>>
+  = <DivF
+      <MulF ('+' 2000) <D> <D> <R>>
+      <AddF <Square <R>> <Square <D>>>
     >
 }
 
 DY {
-  = <DivR
-      <MulR <D> <SubR <Square <D>> <Square <R>>>>
-      <AddR <Square <R>> <Square <D>>>
+  = <DivF
+      <MulF <D> <SubF <Square <D>> <Square <R>>>>
+      <AddF <Square <R>> <Square <D>>>
     >;
 }
 
-X1 { = <SubR ('+' 500) <DX>> }
-X2 { = <AddR ('+' 500) <DX>> }
-YH { = <AddR <YL> <DY>> }
-YL { = <SubR <H> <D>> }
+X1 { = <SubF ('+' 500) <DX>> }
+X2 { = <AddF ('+' 500) <DX>> }
+YH { = <AddF <YL> <DY>> }
+YL { = <SubF <H> <D>> }
 
 $ENTRY Go {
   = <Draw
@@ -245,10 +245,10 @@ $ENTRY Go {
         (Circle '@' <R> <C2x> <H>)
         (Intersect
           '@'
-          <CalcSemiplane <X1> <YH> ('+' 500) <YL> '*' '+' AddR>
-          (FlipH ('+' 500) <CalcSemiplane <X1> <YH> ('+' 500) <YL> '*' '+' AddR>)
-          <CalcSemiplane <X2> <YH> ('+' 500) <H> '*' '-' AddR>
-         (FlipH ('+' 500) <CalcSemiplane <X2> <YH> ('+' 500) <H> '*' '-' AddR>)
+          <CalcSemiplane <X1> <YH> ('+' 500) <YL> '*' '+' AddF>
+          (FlipH ('+' 500) <CalcSemiplane <X1> <YH> ('+' 500) <YL> '*' '+' AddF>)
+          <CalcSemiplane <X2> <YH> ('+' 500) <H> '*' '-' AddF>
+         (FlipH ('+' 500) <CalcSemiplane <X2> <YH> ('+' 500) <H> '*' '-' AddF>)
         )
       )
     >
