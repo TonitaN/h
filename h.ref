@@ -22,13 +22,6 @@
 * Знак нуля должен быть '+', т.е. ('-' 0) — недопустимое значение.
 *
 
-fromRat {
-  ((s.Num) s.Denom) = <Rat (s.Num) s.Denom>;
-
-  ('+' s.X) = ('+' s.X);
-  ('-' s.X) = ('-' s.X);
-}
-
 Rat {
   (s.Num) s.Denom = ('+' </ <* s.Num 1000> s.Denom>);
 }
@@ -37,8 +30,6 @@ AddR {
   (s.S s.X) (s.S s.Y) = (s.S <+ s.X s.Y>);
   ('+' s.X) ('-' s.Y) = <WrapSign <- s.X s.Y>>;
   ('-' s.X) ('+' s.Y) = <WrapSign <- s.Y s.X>>;
-
-  t.X t.Y = <AddR <fromRat t.X> <fromRat t.Y>>;
 }
 
 WrapSign {
@@ -51,8 +42,6 @@ SubR {
   ('+' s.X) ('-' s.Y) = ('+' <+ s.X s.Y>);
   ('-' s.X) ('+' s.Y) = ('-' <+ s.X s.Y>);
   ('-' s.X) ('-' s.Y) = <WrapSign <- s.Y s.X>>;
-
-  t.X t.Y = <SubR <fromRat t.X> <fromRat t.Y>>;
 }
 
 MulR {
@@ -63,8 +52,6 @@ MulR {
         0 = ('+' 0);
         s.Mul = ('-' </ s.Mul 1000>);
       };
-
-  t.X t.Y = <MulR <fromRat t.X> <fromRat t.Y>>;
 
   t.X t.Y e.Numbers = <MulR t.X <MulR t.Y e.Numbers>>;
 }
@@ -77,8 +64,6 @@ DivR {
         0 = ('+' 0);
         s.Div = ('-' s.Div);
       };
-
-  t.X t.Y = <DivR <fromRat t.X> <fromRat t.Y>>;
 }
 
 CompareR {
@@ -86,8 +71,6 @@ CompareR {
   ('+' s.X) ('-' s.Y) = '+';
   ('-' s.X) ('+' s.Y) = '-';
   ('-' s.X) ('-' s.Y) = <Compare s.Y s.X>;
-
-  t.X t.Y = <CompareR <fromRat t.X> <fromRat t.Y>>;
 }
 
 Square {
@@ -123,7 +106,7 @@ DrawLines {
 
 DoDrawLines {
   0 s.TotalLines s.Width t.Shape =
-    <DrawLine ((0) 1) s.Width t.Shape>;
+    <DrawLine ('+' 0) s.Width t.Shape>;
 
   s.Line s.TotalLines s.Width t.Shape =
     <DrawLine <Rat (s.Line) s.TotalLines> s.Width t.Shape>
@@ -136,7 +119,7 @@ DrawLine {
 }
 
 DoDrawLine {
-  t.Y s.Width s.Width t.Shape = <Color t.Shape ((1) 1) t.Y>;
+  t.Y s.Width s.Width t.Shape = <Color t.Shape ('+' 1000) t.Y>;
 
   t.Y s.Col s.Width t.Shape =
     <Color t.Shape <Rat (s.Col) s.Width> t.Y>
@@ -220,7 +203,7 @@ Intersect-SwShape {
 
 FlipH {
   t.AxisX t.Shape t.X t.Y =
-    <Color t.Shape <SubR <MulR ((2) 1) t.AxisX> t.X> t.Y>;
+    <Color t.Shape <SubR <MulR ('+' 2000) t.AxisX> t.X> t.Y>;
 }
 
 
@@ -228,16 +211,16 @@ FlipH {
 * Параметры фигуры (их можно менять)
 *
 
-R { = ((2) 10) }
-H { = ((7) 10) }
-D { = ((6) 10) }
+R { = ('+' 200) }
+H { = ('+' 700) }
+D { = ('+' 600) }
 
-C1x { = <SubR ((1) 2) <R>> }
-C2x { = <AddR ((1) 2) <R>> }
+C1x { = <SubR ('+' 500) <R>> }
+C2x { = <AddR ('+' 500) <R>> }
 
 DX {
   = <DivR
-      <MulR ((2) 1) <D> <D> <R>>
+      <MulR ('+' 2000) <D> <D> <R>>
       <AddR <Square <R>> <Square <D>>>
     >
 }
@@ -249,8 +232,8 @@ DY {
     >;
 }
 
-X1 { = <SubR ((1) 2) <DX>> }
-X2 { = <AddR ((1) 2) <DX>> }
+X1 { = <SubR ('+' 500) <DX>> }
+X2 { = <AddR ('+' 500) <DX>> }
 YH { = <AddR <YL> <DY>> }
 YL { = <SubR <H> <D>> }
 
@@ -262,10 +245,10 @@ $ENTRY Go {
         (Circle '@' <R> <C2x> <H>)
         (Intersect
           '@'
-          <CalcSemiplane <X1> <YH> ((1) 2) <YL> '*' '+' AddR>
-          (FlipH ((1) 2) <CalcSemiplane <X1> <YH> ((1) 2) <YL> '*' '+' AddR>)
-          <CalcSemiplane <X2> <YH> ((1) 2) <H> '*' '-' AddR>
-         (FlipH ((1) 2) <CalcSemiplane <X2> <YH> ((1) 2) <H> '*' '-' AddR>)
+          <CalcSemiplane <X1> <YH> ('+' 500) <YL> '*' '+' AddR>
+          (FlipH ('+' 500) <CalcSemiplane <X1> <YH> ('+' 500) <YL> '*' '+' AddR>)
+          <CalcSemiplane <X2> <YH> ('+' 500) <H> '*' '-' AddR>
+         (FlipH ('+' 500) <CalcSemiplane <X2> <YH> ('+' 500) <H> '*' '-' AddR>)
         )
       )
     >
