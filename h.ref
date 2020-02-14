@@ -298,13 +298,28 @@ Semiplane {
 */
 CalcSemiplane {
   (t.X1 t.Y1) (t.X2 t.Y2) s.ColorP s.ColorN
+    /*
+      Если полуплоскость задавать по двум близко расположенным точкам,
+      то при вычислениях с фиксированной запятой происходит заметная
+      потеря точности — край становится крупной лесенкой. Поэтому масштабируем
+      коэффициенты полуплоскости.
+    */
+    , <newFix 30> : t.Scale
+    , <MulF t.X1 t.Scale> : t.X1Scaled
+    , <MulF t.Y1 t.Scale> : t.Y1Scaled
+    , <MulF t.X2 t.Scale> : t.X2Scaled
+    , <MulF t.Y2 t.Scale> : t.Y2Scaled
+
 * https://ru.wikipedia.org/wiki/Прямая#Уравнение_прямой,_проходящей_
 * через_две_заданные_несовпадающие_точки
     = (Semiplane
         s.ColorP s.ColorN
-        <SubF t.Y1 t.Y2>
-        <SubF t.X2 t.X1>
-        <SubF <MulF t.X1 t.Y2> <MulF t.X2 t.Y1>>
+        <SubF t.Y1Scaled t.Y2Scaled>
+        <SubF t.X2Scaled t.X1Scaled>
+        <DivF
+          <SubF <MulF t.X1Scaled t.Y2Scaled> <MulF t.X2Scaled t.Y1Scaled>>
+          t.Scale
+        >
       );
 }
 
