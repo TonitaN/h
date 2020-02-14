@@ -111,8 +111,8 @@ Draw {
   s.Width t.Shape e.ColorTable =
     <Draw-SaveImage
       s.Width
-      (<MakeColorTable e.ColorTable>)
-      (<DrawLines <- s.Width 1> s.Width t.Shape>)
+      (<Lenw <MakeColorTable e.ColorTable>>)
+      (<Lenw <DrawLines <- s.Width 1> s.Width t.Shape>>)
     >
 }
 
@@ -123,9 +123,7 @@ Draw {
 * Формат BMP-файла см. в https://ru.wikipedia.org/wiki/BMP
 *
 Draw-SaveImage {
-  s.Width (e.ColorTable) (e.Pixels)
-    , <Lenw e.ColorTable> : s.ColorTableLen e.ColorTable
-    , <Lenw e.Pixels> : s.PixelsLen e.Pixels
+  s.Width (s.ColorTableLen e.ColorTable) (s.PixelsLen e.Pixels)
     , 14 : s.FileHeaderLen
     , 12 : s.CoreHeaderLen
     , <+ s.FileHeaderLen s.CoreHeaderLen> : s.AllHeadersLen
