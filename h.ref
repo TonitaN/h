@@ -90,6 +90,22 @@ AbsF {
   (s.S s.X) = ('+' s.X);
 }
 
+Sqrt {
+  t.N = <DoSqrt 10 t.N <newFix 1> <newFix 2>>;
+}
+
+DoSqrt {
+  0 t.N t.Sqrt t.2 = t.Sqrt;
+
+  s.Loops t.N t.App t.2
+    = <DoSqrt
+        <- s.Loops 1>
+        t.N
+        <DivF <AddF t.App <DivF t.N t.App>> t.2>
+        t.2
+      >;
+}
+
 
 *
 * Рисовалка векторных фигур
@@ -345,6 +361,53 @@ Intersect-SwShape {
   s.Color s.ShapeColor e.Shapes t.X t.Y = <Intersect s.Color e.Shapes t.X t.Y>;
 }
 
+/*
+  Полоска с закруглёнными краями, составная фигура
+
+  <MakeStick s.Color t.Width (t.X1 t.Y1) (t.X2 t.Y2)> == t.Shape
+*/
+MakeStick {
+  s.Color t.Width (t.X1 t.Y1) (t.X2 t.Y2)
+    , <SubF t.X2 t.X1> : t.DX
+    , <SubF t.Y2 t.Y1> : t.DY
+    , <Sqrt <AddF <Square t.DX> <Square t.DY>>> : t.Len
+    , <DivF t.Width <newFix 2>> : t.Width2
+    , <MulF t.Width2 <DivF t.DY t.Len>> : t.dx
+    , <MulF t.Width2 <DivF t.DX t.Len>> : t.dy
+
+    , (<AddF t.X1 t.dx> <SubF t.Y1 t.dy>) : t.Point1
+    , (<AddF t.X2 t.dx> <SubF t.Y2 t.dy>) : t.Point2
+    , (<SubF t.X2 t.dx> <AddF t.Y2 t.dy>) : t.Point3
+    , (<SubF t.X1 t.dx> <AddF t.Y1 t.dy>) : t.Point4
+
+    = (Union
+        (Intersect
+          s.Color
+          <CalcSemiplane t.Point1 t.Point2 '+ '>
+          <CalcSemiplane t.Point2 t.Point3 '+ '>
+          <CalcSemiplane t.Point3 t.Point4 '+ '>
+          <CalcSemiplane t.Point4 t.Point1 '+ '>
+        )
+        (HiResCircle s.Color t.Width2 t.X1 t.Y1)
+        (HiResCircle s.Color t.Width2 t.X2 t.Y2)
+      );
+}
+
+* Круг с маленьким радиусом рисуется неточно из-за фиксированной арифметики
+HiResCircle {
+  s.Color t.R t.Cx t.Cy t.X t.Y
+    , <newFix 20> : t.Scale
+    , <MulF t.R t.Scale> : t.RScaled
+    , <MulF t.Cx t.Scale> : t.CxScaled
+    , <MulF t.Cy t.Scale> : t.CyScaled
+    , <MulF t.X t.Scale> : t.XScaled
+    , <MulF t.Y t.Scale> : t.YScaled
+    = <Color
+        (Circle s.Color t.RScaled t.CxScaled t.CyScaled)
+        t.XScaled t.YScaled
+      >;
+}
+
 
 *
 * Параметры фигуры (их можно менять)
@@ -394,9 +457,17 @@ Heart {
 $ENTRY Go {
   = <Draw
       <Width>
-      <Heart>
+      (Union
+        <MakeStick
+          '/' <newFix 1 '/' 40>
+          (<newFix 1 '/' 4> <newFix 1 '/' 4>)
+          (<newFix 3 '/' 4> <newFix 2 '/' 3>)
+        >
+        <Heart>
+      )
       ('@' 255 0 0)
       (' ' 255 255 255)
+      ('/' 51 26 0)
     >
 }
 
