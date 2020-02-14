@@ -243,14 +243,13 @@ DoDrawLine {
   t.Cx, t.Cy ::= t.Number -- координаты центра
 */
 Circle {
-  s.Color t.R t.Cx t.Cy t.X t.Y =
-    <Circle-SwCompare
-      s.Color
-      <CompareF
-        <SqDistance (t.Cx t.Cy) (t.X t.Y)>
-        <Square t.R>
-      >
-    >;
+  s.Color t.R t.Cx t.Cy t.X t.Y
+    , <CompareF <SqDistance (t.Cx t.Cy) (t.X t.Y)> <Square t.R>>
+    : {
+        '-' = s.Color;
+        '0' = s.Color;
+        s.Other = ' ';
+      }
 }
 
 SqDistance {
@@ -258,11 +257,6 @@ SqDistance {
     = <AddF <Square <SubF t.X1 t.X2>> <Square <SubF t.Y1 t.Y2>>>
 }
 
-Circle-SwCompare {
-  s.Color '-' = s.Color;
-  s.Color '0' = s.Color;
-  s.Color s.Other = ' ';
-}
 
 /*
   Объединение фигур
@@ -509,10 +503,10 @@ $ENTRY Go {
 }
 
 Width {
-  = <Width-SwDefined <Numb <Arg 1>>>
-}
-
-Width-SwDefined {
-  0 = 400;
-  s.Width = s.Width;
+  /* пусто */
+    , <Numb <Arg 1>>
+    : {
+        0 = 400;
+        s.Width = s.Width;
+      }
 }
