@@ -476,6 +476,6 @@ Width {
 }
 
 Width-SwDefined {
-  0 = 80;
+  0 = 200;
   s.Width = s.Width;
 }
