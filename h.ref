@@ -23,8 +23,8 @@
 *
 
 newFix {
-  s.Integer = ('+' <* s.Integer 1000>);
-  s.Num '/' s.Denom = ('+' </ <* s.Num 1000> s.Denom>);
+  s.Integer = ('+' <* s.Integer 2500>);
+  s.Num '/' s.Denom = ('+' </ <* s.Num 2500> s.Denom>);
 
   '-' e.Number = <SubF ('+' 0) <newFix e.Number>>;
 }
@@ -50,21 +50,21 @@ SubF {
 }
 
 MulF {
-  (s.S s.X) (s.S s.Y) = ('+' </ <* s.X s.Y> 1000>);
+  (s.S s.X) (s.S s.Y) = ('+' </ <* s.X s.Y> 2500>);
   (s.a s.X) (s.b s.Y)
     , <* s.X s.Y>
     : {
         0 = ('+' 0);
-        s.Mul = ('-' </ s.Mul 1000>);
+        s.Mul = ('-' </ s.Mul 2500>);
       };
 
   t.X t.Y e.Numbers = <MulF t.X <MulF t.Y e.Numbers>>;
 }
 
 DivF {
-  (s.S s.X) (s.S s.Y) = ('+' </ <* s.X 1000> s.Y>);
+  (s.S s.X) (s.S s.Y) = ('+' </ <* s.X 2500> s.Y>);
   (s.a s.X) (s.b s.Y)
-    , </ <* s.X 1000> s.Y>
+    , </ <* s.X 2500> s.Y>
     : {
         0 = ('+' 0);
         s.Div = ('-' s.Div);
@@ -210,7 +210,7 @@ Pad4-MakePad {
 }
 
 DoDrawLine {
-  t.Y s.Width s.Width t.Shape = <Color t.Shape ('+' 1000) t.Y>;
+  t.Y s.Width s.Width t.Shape = <Color t.Shape ('+' 2500) t.Y>;
 
   t.Y s.Col s.Width t.Shape =
     <Color t.Shape <newFix s.Col '/' s.Width> t.Y>
