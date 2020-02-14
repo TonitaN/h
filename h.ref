@@ -97,8 +97,77 @@ Color {
 }
 
 Draw {
-  s.Width t.Shape =
-    <DrawLines <Div <Add s.Width 1> 2> s.Width t.Shape>
+  s.Width t.Shape e.ColorTable =
+    <Draw-SaveImage
+      s.Width
+      (<MakeColorTable e.ColorTable>)
+      (<DrawLines <- s.Width 1> s.Width t.Shape>)
+    >
+}
+
+*$FROM Library
+*$EXTERN wb
+
+*
+* Формат BMP-файла см. в https://ru.wikipedia.org/wiki/BMP
+*
+Draw-SaveImage {
+  s.Width (e.ColorTable) (e.Pixels)
+    , <Lenw e.ColorTable> : s.ColorTableLen e.ColorTable
+    , <Lenw e.Pixels> : s.PixelsLen e.Pixels
+    , 14 : s.FileHeaderLen
+    , 12 : s.CoreHeaderLen
+    , <+ s.FileHeaderLen s.CoreHeaderLen> : s.AllHeadersLen
+    , <+ s.AllHeadersLen s.ColorTableLen> : s.PixelsOffset
+
+    /* BITMAPFILEHEADER */
+    , 'BM' : e.bfType
+    , <DWORD <+ s.PixelsOffset s.PixelsLen>> : e.bfSize
+    , <WORD 0> : e.bfReserved1
+    , <WORD 0> : e.bfReserved2
+    , <DWORD s.PixelsOffset> : e.bfOffBits
+    , e.bfType e.bfSize e.bfReserved1 e.bfReserved2 e.bfOffBits
+    : e.BITMAPFILEHEADER
+
+    /* BITMAPCOREHEADER */
+    , <DWORD s.CoreHeaderLen> : e.bcSize
+    , <WORD s.Width> : e.bcWidth
+    , <WORD s.Width> : e.bcHeight
+    , <WORD 1> : e.bcPlanes
+    , <WORD 8> : e.bcBitCount
+    , e.bcSize e.bcWidth e.bcHeight e.bcPlanes e.bcBitCount
+    : e.BITMAPCOREHEADER
+
+    = <Open wb 1 'heart-' <Symb s.Width> '.bmp'>
+      <Write 1
+        <Chr
+          e.BITMAPFILEHEADER
+          e.BITMAPCOREHEADER
+          e.ColorTable
+          e.Pixels
+        >
+      >
+      <Close 1>
+}
+
+DWORD { s.Number = <WORD <% s.Number 65536>> <WORD </ s.Number 65536>> }
+WORD { s.Number = <% s.Number 256> </ s.Number 256> }
+
+MakeColorTable {
+  e.ColorTable = <DoMakeColorTable 0 <Ord e.ColorTable>>;
+}
+
+DoMakeColorTable {
+  256 /* пусто */ = /* пусто */;
+
+  s.ColorId e.Palette-B (s.ColorId s.R s.G s.B) e.Palette-E
+    /* структура RGBTRIPLE */
+    = s.B s.G s.R
+      <DoMakeColorTable <+ s.ColorId 1> e.Palette-B e.Palette-E>;
+
+  s.ColorId e.Palette
+    /* Цвет не используется, пустая ячейка таблицы */
+    = 0 0 0 <DoMakeColorTable <+ s.ColorId 1> e.Palette>;
 }
 
 DrawLines {
@@ -111,13 +180,30 @@ DoDrawLines {
     <DrawLine ('+' 0) s.Width t.Shape>;
 
   s.Line s.TotalLines s.Width t.Shape =
+    <DoDrawLines <Sub s.Line 1> s.TotalLines s.Width t.Shape>
     <DrawLine <Rat (s.Line) s.TotalLines> s.Width t.Shape>
-    <DoDrawLines <Sub s.Line 1> s.TotalLines s.Width t.Shape>;
 }
 
 DrawLine {
-  t.Y s.Width t.Shape =
-    <Prout <DoDrawLine t.Y 0 s.Width t.Shape>>
+  t.Y s.Width t.Shape = <Pad4 <DoDrawLine t.Y 0 <- s.Width 1> t.Shape>>;
+}
+
+/*
+  Формат BMP требует, чтобы длины строчек были кратны 4
+*/
+Pad4 {
+  e.Pixels = <Pad4-Lenw <Lenw e.Pixels>>
+}
+
+Pad4-Lenw {
+  s.Length e.Pixels = e.Pixels <Pad4-MakePad <% s.Length 4>>
+}
+
+Pad4-MakePad {
+  0 = /* пусто */;
+  1 = '\x00\x00\x00';
+  2 = '\x00\x00';
+  3 = '\x00';
 }
 
 DoDrawLine {
@@ -286,6 +372,8 @@ $ENTRY Go {
           <CalcSemiplane <X1> <YH> ('+' 500) <H> ' +'>
         )
       )
+      ('@' 255 0 0)
+      (' ' 255 255 255)
     >
 }
 
