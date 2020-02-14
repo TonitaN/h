@@ -451,15 +451,42 @@ Heart {
       )
 }
 
+Arrow {
+  /* пусто */
+      /* толщина */
+    , <newFix 1 '/' 40> : t.Width
+      /* Начало и конец */
+    , (<newFix 1 '/' 6> <newFix 1 '/' 6>) : (t.X1 t.Y1)
+    , (<newFix 9 '/' 10> <newFix 4 '/' 5>) : (t.X2 t.Y2)
+      /* относительная длина острия */
+    , <newFix 1 '/' 10> : t.SpikeRel
+      /* разлёт острия, в переменной — половина разлёта */
+    , <MulF t.Width <newFix 1>> : t.SpikeWidth
+
+    , <SubF t.X2 t.X1> : t.DX
+    , <SubF t.Y2 t.Y1> : t.DY
+    , <Sqrt <AddF <Square t.DX> <Square t.DY>>> : t.Len
+
+    , <AddF t.X1 <MulF t.DX t.SpikeRel>> : t.SpikeEndX
+    , <AddF t.Y1 <MulF t.DY t.SpikeRel>> : t.SpikeEndY
+    , <MulF t.SpikeWidth <DivF t.DY t.Len>> : t.dx
+    , <MulF t.SpikeWidth <DivF t.DX t.Len>> : t.dy
+
+    , (<SubF t.SpikeEndX t.dx> <AddF t.SpikeEndY t.dy>) : t.SpikeEnd1
+    , (<AddF t.SpikeEndX t.dx> <SubF t.SpikeEndY t.dy>) : t.SpikeEnd2
+
+    = (Union
+        <MakeStick '/' t.Width (t.X1 t.Y1) t.SpikeEnd1>
+        <MakeStick '/' t.Width (t.X1 t.Y1) t.SpikeEnd2>
+        <MakeStick '/' t.Width (t.X1 t.Y1) (t.X2 t.Y2)>
+      )
+}
+
 $ENTRY Go {
   = <Draw
       <Width>
       (Union
-        <MakeStick
-          '/' <newFix 1 '/' 40>
-          (<newFix 1 '/' 4> <newFix 1 '/' 4>)
-          (<newFix 3 '/' 4> <newFix 2 '/' 3>)
-        >
+        <Arrow>
         <Heart>
       )
       ('@' 255 0 0)
