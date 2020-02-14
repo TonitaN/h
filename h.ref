@@ -82,14 +82,6 @@ Square {
   t.X = <MulF t.X t.X>;
 }
 
-AbsSubF {
-  t.X t.Y = <AbsF <SubF t.X t.Y>>;
-}
-
-AbsF {
-  (s.S s.X) = ('+' s.X);
-}
-
 Sqrt {
   t.N = <DoSqrt 10 t.N <newFix 1> <newFix 2>>;
 }
@@ -255,10 +247,15 @@ Circle {
     <Circle-SwCompare
       s.Color
       <CompareF
-        <AddF <Square <AbsSubF t.Cx t.X>> <Square <AbsSubF t.Cy t.Y>>>
+        <SqDistance (t.Cx t.Cy) (t.X t.Y)>
         <Square t.R>
       >
     >;
+}
+
+SqDistance {
+  (t.X1 t.Y1) (t.X2 t.Y2)
+    = <AddF <Square <SubF t.X1 t.X2>> <Square <SubF t.Y1 t.Y2>>>
 }
 
 Circle-SwCompare {
