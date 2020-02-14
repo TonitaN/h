@@ -22,8 +22,11 @@
 * Знак нуля должен быть '+', т.е. ('-' 0) — недопустимое значение.
 *
 
-Rat {
-  (s.Num) s.Denom = ('+' </ <* s.Num 1000> s.Denom>);
+newFix {
+  s.Integer = ('+' <* s.Integer 1000>);
+  s.Num '/' s.Denom = ('+' </ <* s.Num 1000> s.Denom>);
+
+  '-' e.Number = <SubF ('+' 0) <newFix e.Number>>;
 }
 
 AddF {
@@ -181,7 +184,7 @@ DoDrawLines {
 
   s.Line s.TotalLines s.Width t.Shape =
     <DoDrawLines <Sub s.Line 1> s.TotalLines s.Width t.Shape>
-    <DrawLine <Rat (s.Line) s.TotalLines> s.Width t.Shape>
+    <DrawLine <newFix s.Line '/' s.TotalLines> s.Width t.Shape>
 }
 
 DrawLine {
@@ -210,7 +213,7 @@ DoDrawLine {
   t.Y s.Width s.Width t.Shape = <Color t.Shape ('+' 1000) t.Y>;
 
   t.Y s.Col s.Width t.Shape =
-    <Color t.Shape <Rat (s.Col) s.Width> t.Y>
+    <Color t.Shape <newFix s.Col '/' s.Width> t.Y>
     <DoDrawLine t.Y <Add s.Col 1> s.Width t.Shape>;
 }
 
@@ -332,16 +335,16 @@ Intersect-SwShape {
 * Параметры фигуры (их можно менять)
 *
 
-R { = ('+' 200) }
-H { = ('+' 700) }
-D { = ('+' 600) }
+R { = <newFix 2 '/' 10> }
+H { = <newFix 7 '/' 10> }
+D { = <newFix 6 '/' 10> }
 
-C1x { = <SubF ('+' 500) <R>> }
-C2x { = <AddF ('+' 500) <R>> }
+C1x { = <SubF <newFix 1 '/' 2> <R>> }
+C2x { = <AddF <newFix 1 '/' 2> <R>> }
 
 DX {
   = <DivF
-      <MulF ('+' 2000) <D> <D> <R>>
+      <MulF <newFix 2> <D> <D> <R>>
       <AddF <Square <R>> <Square <D>>>
     >
 }
@@ -353,8 +356,8 @@ DY {
     >;
 }
 
-X1 { = <SubF ('+' 500) <DX>> }
-X2 { = <AddF ('+' 500) <DX>> }
+X1 { = <SubF <newFix 1 '/' 2> <DX>> }
+X2 { = <AddF <newFix 1 '/' 2> <DX>> }
 YH { = <AddF <YL> <DY>> }
 YL { = <SubF <H> <D>> }
 
@@ -366,10 +369,10 @@ $ENTRY Go {
         (Circle '@' <R> <C2x> <H>)
         (Intersect
           '@'
-          <CalcSemiplane <X1> <YH> ('+' 500) <YL> '+ '>
-          <CalcSemiplane ('+' 500) <YL> <X2> <YH> '+ '>
-          <CalcSemiplane <X2> <YH> ('+' 500) <H> '+ '>
-          <CalcSemiplane <X1> <YH> ('+' 500) <H> ' +'>
+          <CalcSemiplane <X1> <YH> <newFix 1 '/' 2> <YL> '+ '>
+          <CalcSemiplane <newFix 1 '/' 2> <YL> <X2> <YH> '+ '>
+          <CalcSemiplane <X2> <YH> <newFix 1 '/' 2> <H> '+ '>
+          <CalcSemiplane <X1> <YH> <newFix 1 '/' 2> <H> ' +'>
         )
       )
       ('@' 255 0 0)
