@@ -406,47 +406,46 @@ HiResCircle {
 }
 
 
-*
-* Параметры фигуры (их можно менять)
-*
-
-R { = <newFix 2 '/' 10> }
-H { = <newFix 7 '/' 10> }
-D { = <newFix 6 '/' 10> }
-
-C1x { = <SubF <newFix 1 '/' 2> <R>> }
-C2x { = <AddF <newFix 1 '/' 2> <R>> }
-
-DX {
-  = <DivF
-      <MulF <newFix 2> <D> <D> <R>>
-      <AddF <Square <R>> <Square <D>>>
-    >
-}
-
-DY {
-  = <DivF
-      <MulF <D> <SubF <Square <D>> <Square <R>>>>
-      <AddF <Square <R>> <Square <D>>>
-    >;
-}
-
-X1 { = <SubF <newFix 1 '/' 2> <DX>> }
-X2 { = <AddF <newFix 1 '/' 2> <DX>> }
-YH { = <AddF <YL> <DY>> }
-YL { = <SubF <H> <D>> }
-
 Heart {
   /* пусто */
+      /* радиус кругов */
+    , <newFix 2 '/' 10> : t.R
+      /* высота центров кругов */
+    , <newFix 7 '/' 10> : t.Cy
+      /* расстояние от центров кругов до острия внизу */
+    , <newFix 6 '/' 10> : t.D
+
+      /* координаты X кругов */
+    , <SubF <newFix 1 '/' 2> t.R> : t.C1x
+    , <AddF <newFix 1 '/' 2> t.R> : t.C2x
+
+      /* смещения касательных от точки касания кругов */
+    , <DivF
+        <MulF <newFix 2> t.D t.D t.R>
+        <AddF <Square t.R> <Square t.D>>
+      >
+    : t.DX
+    , <DivF
+        <MulF t.D <SubF <Square t.D> <Square t.R>>>
+        <AddF <Square t.R> <Square t.D>>
+      >
+    : t.DY
+
+      /* координаты касательных к кругам и острия внизу */
+    , <SubF <newFix 1 '/' 2> t.DX> : t.X1
+    , <AddF <newFix 1 '/' 2> t.DX> : t.X2
+    , <SubF t.Cy t.D> : t.YL
+    , <AddF t.YL t.DY> : t.YH
+
     = (Union
-        (Circle '@' <R> <C1x> <H>)
-        (Circle '@' <R> <C2x> <H>)
+        (Circle '@' t.R t.C1x t.Cy)
+        (Circle '@' t.R t.C2x t.Cy)
         (Intersect
           '@'
-          <MakeSemiplane (<X1> <YH>) (<newFix 1 '/' 2> <YL>) '+ '>
-          <MakeSemiplane (<newFix 1 '/' 2> <YL>) (<X2> <YH>) '+ '>
-          <MakeSemiplane (<X2> <YH>) (<newFix 1 '/' 2> <H>) '+ '>
-          <MakeSemiplane (<X1> <YH>) (<newFix 1 '/' 2> <H>) ' +'>
+          <MakeSemiplane (t.X1 t.YH) (<newFix 1 '/' 2> t.YL) '+ '>
+          <MakeSemiplane (<newFix 1 '/' 2> t.YL) (t.X2 t.YH) '+ '>
+          <MakeSemiplane (t.X2 t.YH) (<newFix 1 '/' 2> t.Cy) '+ '>
+          <MakeSemiplane (t.X1 t.YH) (<newFix 1 '/' 2> t.Cy) ' +'>
         )
       )
 }
