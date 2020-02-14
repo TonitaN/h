@@ -149,7 +149,9 @@ Draw-SaveImage {
     , e.bcSize e.bcWidth e.bcHeight e.bcPlanes e.bcBitCount
     : e.BITMAPCOREHEADER
 
-    = <Open wb 1 'heart-' <Symb s.Width> '.bmp'>
+    , 'heart-' <Symb s.Width> '.bmp' : e.FileName
+
+    = <Open wb 1 e.FileName>
       <Write 1
         <Chr
           e.BITMAPFILEHEADER
@@ -159,6 +161,7 @@ Draw-SaveImage {
         >
       >
       <Close 1>
+      <Prout 'File `' e.FileName '\' is created!'>;
 }
 
 DWORD { s.Number = <WORD <% s.Number 65536>> <WORD </ s.Number 65536>> }
