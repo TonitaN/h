@@ -317,7 +317,7 @@ MakeSemiplane {
       потеря точности — край становится крупной лесенкой. Поэтому масштабируем
       коэффициенты полуплоскости.
     */
-    , <newFix 30> : t.Scale
+    , <newFix 20> : t.Scale
     , <MulF t.X1 t.Scale> : t.X1Scaled
     , <MulF t.Y1 t.Scale> : t.Y1Scaled
     , <MulF t.X2 t.Scale> : t.X2Scaled
@@ -457,7 +457,7 @@ Arrow {
     , <newFix 1 '/' 40> : t.Width
       /* Начало и конец */
     , (<newFix 1 '/' 6> <newFix 1 '/' 6>) : (t.X1 t.Y1)
-    , (<newFix 9 '/' 10> <newFix 4 '/' 5>) : (t.X2 t.Y2)
+    , (<newFix 9 '/' 10> <newFix 6 '/' 7>) : (t.X2 t.Y2)
       /* относительная длина острия */
     , <newFix 1 '/' 10> : t.SpikeRel
       /* разлёт острия, в переменной — половина разлёта */
@@ -482,10 +482,24 @@ Arrow {
       )
 }
 
+CuttingSemiplane {
+  s.Color1 s.Color2
+    = <MakeSemiplane
+        (<newFix 1 '/' 3> <newFix 1>)
+        (<newFix 1> <newFix 1 '/' 3>)
+        s.Color1 s.Color2
+      >
+}
+
 $ENTRY Go {
   = <Draw
       <Width>
       (Union
+        (Intersect
+          '@'
+          <CuttingSemiplane ' *'>
+          <Heart>
+        )
         <Arrow>
         <Heart>
       )
