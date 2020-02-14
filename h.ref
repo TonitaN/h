@@ -304,12 +304,12 @@ Semiplane {
 }
 
 /*
-  <CalcSemiplane (t.X1 t.Y1) (t.X2 t.Y2) s.ColorP s.ColorN> == t.Semiplane
+  <MakeSemiplane (t.X1 t.Y1) (t.X2 t.Y2) s.ColorP s.ColorN> == t.Semiplane
 
   Строит полуплоскость по вектору (t.X1 t.Y1) - (t.X2 t.Y2).
   Если смотреть по направлению вектора, то первый цвет слева, второй справа.
 */
-CalcSemiplane {
+MakeSemiplane {
   (t.X1 t.Y1) (t.X2 t.Y2) s.ColorP s.ColorN
     /*
       Если полуплоскость задавать по двум близко расположенным точкам,
@@ -380,10 +380,10 @@ MakeStick {
     = (Union
         (Intersect
           s.Color
-          <CalcSemiplane t.Point1 t.Point2 '+ '>
-          <CalcSemiplane t.Point2 t.Point3 '+ '>
-          <CalcSemiplane t.Point3 t.Point4 '+ '>
-          <CalcSemiplane t.Point4 t.Point1 '+ '>
+          <MakeSemiplane t.Point1 t.Point2 '+ '>
+          <MakeSemiplane t.Point2 t.Point3 '+ '>
+          <MakeSemiplane t.Point3 t.Point4 '+ '>
+          <MakeSemiplane t.Point4 t.Point1 '+ '>
         )
         (HiResCircle s.Color t.Width2 t.X1 t.Y1)
         (HiResCircle s.Color t.Width2 t.X2 t.Y2)
@@ -443,10 +443,10 @@ Heart {
         (Circle '@' <R> <C2x> <H>)
         (Intersect
           '@'
-          <CalcSemiplane (<X1> <YH>) (<newFix 1 '/' 2> <YL>) '+ '>
-          <CalcSemiplane (<newFix 1 '/' 2> <YL>) (<X2> <YH>) '+ '>
-          <CalcSemiplane (<X2> <YH>) (<newFix 1 '/' 2> <H>) '+ '>
-          <CalcSemiplane (<X1> <YH>) (<newFix 1 '/' 2> <H>) ' +'>
+          <MakeSemiplane (<X1> <YH>) (<newFix 1 '/' 2> <YL>) '+ '>
+          <MakeSemiplane (<newFix 1 '/' 2> <YL>) (<X2> <YH>) '+ '>
+          <MakeSemiplane (<X2> <YH>) (<newFix 1 '/' 2> <H>) '+ '>
+          <MakeSemiplane (<X1> <YH>) (<newFix 1 '/' 2> <H>) ' +'>
         )
       )
 }
