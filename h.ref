@@ -1,71 +1,101 @@
 **
-** Тоне от Саши (исправленная версия)
+** Тоне от Саши (версия 2020)
 **
 **
 ** Запуск программы:
 **
 ** refgo имя-программы [width]
 **
-** где width — ширина картинки (по умолчанию 80 колонок)
+** где width — ширина картинки (по умолчанию 400×400 пикселей)
 **
 
 
 *
-* Рациональная арифметика
+* Знаковая арифметика с фиксированной запятой, совместимая с Рефалом-05.
+* Точность вычислений 0,0004
+*
+* t.Number ::= (s.Sign s.Rep)
+* s.Sign ::= '+' | '-'
+* s.Rep ::= s.NUMBER
+*
+* s.Rep — число 2500-х долей единицы.
+* Знак нуля должен быть '+', т.е. ('-' 0) — недопустимое значение.
 *
 
-GCD {
-  (0) e.Y = e.Y;
-  (e.X) 0 = e.X;
-  (e.X) e.Y = <GCD (e.Y) <Mod (e.X) e.Y>>
+newFix {
+  s.Integer = ('+' <* s.Integer 2500>);
+  s.Num '/' s.Denom = ('+' </ <* s.Num 2500> s.Denom>);
+
+  '-' e.Number = <SubF ('+' 0) <newFix e.Number>>;
 }
 
-Rat {
-  (e.N) e.D = ((<Div (e.N) <GCD (e.N) e.D>>) <Div (e.D) <GCD (e.N) e.D>>);
+AddF {
+  (s.S s.X) (s.S s.Y) = (s.S <+ s.X s.Y>);
+  ('+' s.X) ('-' s.Y) = <WrapSign <- s.X s.Y>>;
+  ('-' s.X) ('+' s.Y) = <WrapSign <- s.Y s.X>>;
+
+  t.X t.Y e.Numbers = <AddF t.X <AddF t.Y e.Numbers>>;
 }
 
-AddR {
-  t.X t.Y = <AddSubR Add t.X t.Y>;
+WrapSign {
+  '-' s.X = ('-' s.X);
+  s.X = ('+' s.X);
 }
 
-SubR {
-  t.X t.Y = <AddSubR Sub t.X t.Y>;
+SubF {
+  ('+' s.X) ('+' s.Y) = <WrapSign <- s.X s.Y>>;
+  ('+' s.X) ('-' s.Y) = ('+' <+ s.X s.Y>);
+  ('-' s.X) ('+' s.Y) = ('-' <+ s.X s.Y>);
+  ('-' s.X) ('-' s.Y) = <WrapSign <- s.Y s.X>>;
 }
 
-AddSubR {
-  s.Op ((e.N1) e.D1) ((e.N2) e.D2) =
-    <Rat
-      (<Mu s.Op (<Mul (e.N1) e.D2>) <Mul (e.D1) e.N2>>)
-      <Mul (e.D1) e.D2>
-    >;
+MulF {
+  (s.S s.X) (s.S s.Y) = ('+' </ <* s.X s.Y> 2500>);
+  (s.a s.X) (s.b s.Y)
+    , <* s.X s.Y>
+    : {
+        0 = ('+' 0);
+        s.Mul = ('-' </ s.Mul 2500>);
+      };
+
+  t.X t.Y e.Numbers = <MulF t.X <MulF t.Y e.Numbers>>;
 }
 
-MulR {
-  ((e.N1) e.D1) ((e.N2) e.D2) = <Rat (<Mul (e.N1) e.N2>) <Mul (e.D1) e.D2>>;
-
-  t.X t.Y e.Numbers = <MulR t.X <MulR t.Y e.Numbers>>;
+DivF {
+  (s.S s.X) (s.S s.Y) = ('+' </ <* s.X 2500> s.Y>);
+  (s.a s.X) (s.b s.Y)
+    , </ <* s.X 2500> s.Y>
+    : {
+        0 = ('+' 0);
+        s.Div = ('-' s.Div);
+      };
 }
 
-DivR {
-  ((e.N1) e.D1) ((e.N2) e.D2) = <Rat (<Mul (e.N1) e.D2>) <Mul (e.D1) e.N2>>;
-}
-
-CompareR {
-  ((e.N1) e.D1) ((e.N2) e.D2) = <Compare (<Mul (e.N1) e.D2>) <Mul e.D1 e.N2>>;
+CompareF {
+  ('+' s.X) ('+' s.Y) = <Compare s.X s.Y>;
+  ('+' s.X) ('-' s.Y) = '+';
+  ('-' s.X) ('+' s.Y) = '-';
+  ('-' s.X) ('-' s.Y) = <Compare s.Y s.X>;
 }
 
 Square {
-  t.X = <MulR t.X t.X>;
+  t.X = <MulF t.X t.X>;
 }
 
-AbsSubR {
-  t.X t.Y = <AbsSubR-SwSign <CompareR t.X t.Y> t.X t.Y>;
+Sqrt {
+  t.N = <DoSqrt 10 t.N <newFix 1> <newFix 2>>;
 }
 
-AbsSubR-SwSign {
-  '-' t.X t.Y = <SubR t.Y t.X>;
-  '0' t.X t.Y = ((0) 1);
-  '+' t.X t.Y = <SubR t.X t.Y>;
+DoSqrt {
+  0 t.N t.Sqrt t.2 = t.Sqrt;
+
+  s.Loops t.N t.App t.2
+    = <DoSqrt
+        <- s.Loops 1>
+        t.N
+        <DivF <AddF t.App <DivF t.N t.App>> t.2>
+        t.2
+      >;
 }
 
 
@@ -78,8 +108,78 @@ Color {
 }
 
 Draw {
-  s.Width t.Shape =
-    <DrawLines <Div <Add s.Width 1> 2> s.Width t.Shape>
+  s.Width t.Shape e.ColorTable =
+    <Draw-SaveImage
+      s.Width
+      (<Lenw <MakeColorTable e.ColorTable>>)
+      (<Lenw <DrawLines <- s.Width 1> s.Width t.Shape>>)
+    >
+}
+
+*$FROM Library
+*$EXTERN wb
+
+*
+* Формат BMP-файла см. в https://ru.wikipedia.org/wiki/BMP
+*
+Draw-SaveImage {
+  s.Width (s.ColorTableLen e.ColorTable) (s.PixelsLen e.Pixels)
+    , 14 : s.FileHeaderLen
+    , 12 : s.CoreHeaderLen
+    , <+ s.FileHeaderLen s.CoreHeaderLen> : s.AllHeadersLen
+    , <+ s.AllHeadersLen s.ColorTableLen> : s.PixelsOffset
+
+    /* BITMAPFILEHEADER */
+    , 'BM' : e.bfType
+    , <DWORD <+ s.PixelsOffset s.PixelsLen>> : e.bfSize
+    , <WORD 0> : e.bfReserved1
+    , <WORD 0> : e.bfReserved2
+    , <DWORD s.PixelsOffset> : e.bfOffBits
+    , e.bfType e.bfSize e.bfReserved1 e.bfReserved2 e.bfOffBits
+    : e.BITMAPFILEHEADER
+
+    /* BITMAPCOREHEADER */
+    , <DWORD s.CoreHeaderLen> : e.bcSize
+    , <WORD s.Width> : e.bcWidth
+    , <WORD s.Width> : e.bcHeight
+    , <WORD 1> : e.bcPlanes
+    , <WORD 8> : e.bcBitCount
+    , e.bcSize e.bcWidth e.bcHeight e.bcPlanes e.bcBitCount
+    : e.BITMAPCOREHEADER
+
+    , 'heart-' <Symb s.Width> '.bmp' : e.FileName
+
+    = <Open wb 1 e.FileName>
+      <Write 1
+        <Chr
+          e.BITMAPFILEHEADER
+          e.BITMAPCOREHEADER
+          e.ColorTable
+          e.Pixels
+        >
+      >
+      <Close 1>
+      <Prout 'File `' e.FileName '\' is created!'>;
+}
+
+DWORD { s.Number = <WORD <% s.Number 65536>> <WORD </ s.Number 65536>> }
+WORD { s.Number = <% s.Number 256> </ s.Number 256> }
+
+MakeColorTable {
+  e.ColorTable = <DoMakeColorTable 0 <Ord e.ColorTable>>;
+}
+
+DoMakeColorTable {
+  256 /* пусто */ = /* пусто */;
+
+  s.ColorId e.Palette-B (s.ColorId s.R s.G s.B) e.Palette-E
+    /* структура RGBTRIPLE */
+    = s.B s.G s.R
+      <DoMakeColorTable <+ s.ColorId 1> e.Palette-B e.Palette-E>;
+
+  s.ColorId e.Palette
+    /* Цвет не используется, пустая ячейка таблицы */
+    = 0 0 0 <DoMakeColorTable <+ s.ColorId 1> e.Palette>;
 }
 
 DrawLines {
@@ -89,43 +189,81 @@ DrawLines {
 
 DoDrawLines {
   0 s.TotalLines s.Width t.Shape =
-    <DrawLine ((0) 1) s.Width t.Shape>;
+    <DrawLine ('+' 0) s.Width t.Shape>;
 
   s.Line s.TotalLines s.Width t.Shape =
-    <DrawLine <Rat (s.Line) s.TotalLines> s.Width t.Shape>
-    <DoDrawLines <Sub s.Line 1> s.TotalLines s.Width t.Shape>;
+    <DoDrawLines <Sub s.Line 1> s.TotalLines s.Width t.Shape>
+    <DrawLine <newFix s.Line '/' s.TotalLines> s.Width t.Shape>
 }
 
 DrawLine {
-  t.Y s.Width t.Shape =
-    <Prout <DoDrawLine t.Y 0 s.Width t.Shape>>
+  t.Y s.Width t.Shape = <Pad4 <DoDrawLine t.Y 0 <- s.Width 1> t.Shape>>;
+}
+
+/*
+  Формат BMP требует, чтобы длины строчек были кратны 4
+*/
+Pad4 {
+  e.Pixels = <Pad4-Lenw <Lenw e.Pixels>>
+}
+
+Pad4-Lenw {
+  s.Length e.Pixels = e.Pixels <Pad4-MakePad <% s.Length 4>>
+}
+
+Pad4-MakePad {
+  0 = /* пусто */;
+  1 = '\x00\x00\x00';
+  2 = '\x00\x00';
+  3 = '\x00';
 }
 
 DoDrawLine {
-  t.Y s.Width s.Width t.Shape = <Color t.Shape ((1) 1) t.Y>;
+  t.Y s.Width s.Width t.Shape = <Color t.Shape ('+' 2500) t.Y>;
 
   t.Y s.Col s.Width t.Shape =
-    <Color t.Shape <Rat (s.Col) s.Width> t.Y>
+    <Color t.Shape <newFix s.Col '/' s.Width> t.Y>
     <DoDrawLine t.Y <Add s.Col 1> s.Width t.Shape>;
 }
 
+*
+* Объектно-ориентированные графические примитивы
+*
+* t.Shape ::= (s.Tag e.Info)
+* <Mu s.Tag e.Info t.X t.Y> ::= s.Color
+* s.Color ::= s.CHAR
+*
+* Цвет заливки — символ. Пробел считается «прозрачным» цветом.
+*
+
+/*
+  Круг
+
+  t.Circle ::= (Circle s.Color t.R t.Cx t.Cy)
+  t.R ::= t.Number -- радиус
+  t.Cx, t.Cy ::= t.Number -- координаты центра
+*/
 Circle {
-  s.Color t.R t.Cx t.Cy t.X t.Y =
-    <Circle-SwCompare
-      s.Color
-      <CompareR
-        <AddR <Square <AbsSubR t.Cx t.X>> <Square <AbsSubR t.Cy t.Y>>>
-        <Square t.R>
-      >
-    >;
+  s.Color t.R t.Cx t.Cy t.X t.Y
+    , <CompareF <SqDistance (t.Cx t.Cy) (t.X t.Y)> <Square t.R>>
+    : {
+        '-' = s.Color;
+        '0' = s.Color;
+        s.Other = ' ';
+      }
 }
 
-Circle-SwCompare {
-  s.Color '-' = s.Color;
-  s.Color '0' = s.Color;
-  s.Color s.Other = ' ';
+SqDistance {
+  (t.X1 t.Y1) (t.X2 t.Y2)
+    = <AddF <Square <SubF t.X1 t.X2>> <Square <SubF t.Y1 t.Y2>>>
 }
 
+
+/*
+  Объединение фигур
+
+  t.Union ::= (Union t.Shape*)
+*/
 Union {
   t.Shape e.Shapes t.X t.Y =
     <Union-SwShape
@@ -140,36 +278,67 @@ Union-SwShape {
   s.Color e.Shapes t.X t.Y = s.Color;
 }
 
+/*
+  Полуплоскость.
+
+  Прямая на плоскости задаётся как A·x+B·y+C=0. Полуплоскость раскрашивает
+  плоскость в два цвета: первый цвет, где A·x+B·y+C >= 0, второй — < 0.
+
+  t.Semiplane ::= (Semiplane s.ColorP s.ColorN t.A t.B t.C)
+
+  t.A, t.B, t.C ::= t.Number
+  s.ColorP, s.ColorN ::= s.Color
+*/
 Semiplane {
-  s.Color s.Sign t.A s.Op t.B t.C t.X t.Y =
-    <Semiplane-SwCompare
-      s.Color s.Sign
-      <CompareR <Mu s.Op <MulR t.A t.X> <MulR t.B t.Y>> t.C>
-   >;
+  s.ColorP s.ColorN t.A t.B t.C  t.X t.Y
+    , <AddF <MulF t.A t.X> <MulF t.B t.Y> t.C>
+    : {
+        ('+' s.N) = s.ColorP;
+        ('-' s.N) = s.ColorN;
+      };
 }
 
-Semiplane-SwCompare {
-  s.Color s.Sign s.Sign = s.Color;
-  s.Color s.Sign s.Other = ' ';
+/*
+  <MakeSemiplane (t.X1 t.Y1) (t.X2 t.Y2) s.ColorP s.ColorN> == t.Semiplane
+
+  Строит полуплоскость по вектору (t.X1 t.Y1) - (t.X2 t.Y2).
+  Если смотреть по направлению вектора, то первый цвет слева, второй справа.
+*/
+MakeSemiplane {
+  (t.X1 t.Y1) (t.X2 t.Y2) s.ColorP s.ColorN
+    /*
+      Если полуплоскость задавать по двум близко расположенным точкам,
+      то при вычислениях с фиксированной запятой происходит заметная
+      потеря точности — край становится крупной лесенкой. Поэтому масштабируем
+      коэффициенты полуплоскости.
+    */
+    , <newFix 20> : t.Scale
+    , <MulF t.X1 t.Scale> : t.X1Scaled
+    , <MulF t.Y1 t.Scale> : t.Y1Scaled
+    , <MulF t.X2 t.Scale> : t.X2Scaled
+    , <MulF t.Y2 t.Scale> : t.Y2Scaled
+
+* https://ru.wikipedia.org/wiki/Прямая#Уравнение_прямой,_проходящей_
+* через_две_заданные_несовпадающие_точки
+    = (Semiplane
+        s.ColorP s.ColorN
+        <SubF t.Y1Scaled t.Y2Scaled>
+        <SubF t.X2Scaled t.X1Scaled>
+        <DivF
+          <SubF <MulF t.X1Scaled t.Y2Scaled> <MulF t.X2Scaled t.Y1Scaled>>
+          t.Scale
+        >
+      );
 }
 
-CalcSemiplane {
-  t.X1 t.Y1 t.X2 t.Y2 s.Color s.Sign s.Op =
-    <CalcSemiplane-Aux
-      s.Color s.Sign
-      <AbsSubR t.Y1 t.Y2> s.Op <AbsSubR t.X1 t.X2>
-      t.X1 t.Y1
-    >;
-}
+/*
+  Пересечение фигур
 
-CalcSemiplane-Aux {
-  s.Color s.Sign t.A s.Op t.B t.X1 t.Y1 =
-    (Semiplane
-      s.Color s.Sign t.A s.Op t.B
-      <Mu s.Op <MulR t.A t.X1> <MulR t.B t.Y1>>
-    );
-}
+  t.Intersect ::= (Intersect s.Color t.Shape*)
 
+  Цвет фигуры пересечения определяется цветом s.Color, не зависит
+  от цветов самих фигур.
+*/
 Intersect {
   s.Color t.Shape e.Shapes t.X t.Y =
     <Intersect-SwShape
@@ -184,64 +353,161 @@ Intersect-SwShape {
   s.Color s.ShapeColor e.Shapes t.X t.Y = <Intersect s.Color e.Shapes t.X t.Y>;
 }
 
-FlipH {
-  t.AxisX t.Shape t.X t.Y =
-    <Color t.Shape <SubR <MulR ((2) 1) t.AxisX> t.X> t.Y>;
+/*
+  Полоска с закруглёнными краями, составная фигура
+
+  <MakeStick s.Color t.Width (t.X1 t.Y1) (t.X2 t.Y2)> == t.Shape
+*/
+MakeStick {
+  s.Color t.Width (t.X1 t.Y1) (t.X2 t.Y2)
+    , <SubF t.X2 t.X1> : t.DX
+    , <SubF t.Y2 t.Y1> : t.DY
+    , <Sqrt <AddF <Square t.DX> <Square t.DY>>> : t.Len
+    , <DivF t.Width <newFix 2>> : t.Width2
+    , <MulF t.Width2 <DivF t.DY t.Len>> : t.dx
+    , <MulF t.Width2 <DivF t.DX t.Len>> : t.dy
+
+    , (<AddF t.X1 t.dx> <SubF t.Y1 t.dy>) : t.Point1
+    , (<AddF t.X2 t.dx> <SubF t.Y2 t.dy>) : t.Point2
+    , (<SubF t.X2 t.dx> <AddF t.Y2 t.dy>) : t.Point3
+    , (<SubF t.X1 t.dx> <AddF t.Y1 t.dy>) : t.Point4
+
+    = (Union
+        (Intersect
+          s.Color
+          <MakeSemiplane t.Point1 t.Point2 '+ '>
+          <MakeSemiplane t.Point2 t.Point3 '+ '>
+          <MakeSemiplane t.Point3 t.Point4 '+ '>
+          <MakeSemiplane t.Point4 t.Point1 '+ '>
+        )
+        (HiResCircle s.Color t.Width2 t.X1 t.Y1)
+        (HiResCircle s.Color t.Width2 t.X2 t.Y2)
+      );
+}
+
+* Круг с маленьким радиусом рисуется неточно из-за фиксированной арифметики
+HiResCircle {
+  s.Color t.R t.Cx t.Cy t.X t.Y
+    , <newFix 20> : t.Scale
+    , <MulF t.R t.Scale> : t.RScaled
+    , <MulF t.Cx t.Scale> : t.CxScaled
+    , <MulF t.Cy t.Scale> : t.CyScaled
+    , <MulF t.X t.Scale> : t.XScaled
+    , <MulF t.Y t.Scale> : t.YScaled
+    = <Color
+        (Circle s.Color t.RScaled t.CxScaled t.CyScaled)
+        t.XScaled t.YScaled
+      >;
 }
 
 
-*
-* Параметры фигуры (их можно менять)
-*
+Heart {
+  /* пусто */
+      /* радиус кругов */
+    , <newFix 2 '/' 10> : t.R
+      /* высота центров кругов */
+    , <newFix 7 '/' 10> : t.Cy
+      /* расстояние от центров кругов до острия внизу */
+    , <newFix 6 '/' 10> : t.D
 
-R { = ((2) 10) }
-H { = ((7) 10) }
-D { = ((6) 10) }
+      /* координаты X кругов */
+    , <SubF <newFix 1 '/' 2> t.R> : t.C1x
+    , <AddF <newFix 1 '/' 2> t.R> : t.C2x
 
-C1x { = <SubR ((1) 2) <R>> }
-C2x { = <AddR ((1) 2) <R>> }
+      /* смещения касательных от точки касания кругов */
+    , <DivF
+        <MulF <newFix 2> t.D t.D t.R>
+        <AddF <Square t.R> <Square t.D>>
+      >
+    : t.DX
+    , <DivF
+        <MulF t.D <SubF <Square t.D> <Square t.R>>>
+        <AddF <Square t.R> <Square t.D>>
+      >
+    : t.DY
 
-DX {
-  = <DivR
-      <MulR ((2) 1) <D> <D> <R>>
-      <AddR <Square <R>> <Square <D>>>
-    >
+      /* координаты касательных к кругам и острия внизу */
+    , <SubF <newFix 1 '/' 2> t.DX> : t.X1
+    , <AddF <newFix 1 '/' 2> t.DX> : t.X2
+    , <SubF t.Cy t.D> : t.YL
+    , <AddF t.YL t.DY> : t.YH
+
+    = (Union
+        (Circle '@' t.R t.C1x t.Cy)
+        (Circle '@' t.R t.C2x t.Cy)
+        (Intersect
+          '@'
+          <MakeSemiplane (t.X1 t.YH) (<newFix 1 '/' 2> t.YL) '+ '>
+          <MakeSemiplane (<newFix 1 '/' 2> t.YL) (t.X2 t.YH) '+ '>
+          <MakeSemiplane (t.X2 t.YH) (<newFix 1 '/' 2> t.Cy) '+ '>
+          <MakeSemiplane (t.X1 t.YH) (<newFix 1 '/' 2> t.Cy) ' +'>
+        )
+      )
 }
 
-DY {
-  = <DivR
-      <MulR <D> <SubR <Square <D>> <Square <R>>>>
-      <AddR <Square <R>> <Square <D>>>
-    >;
+Arrow {
+  /* пусто */
+      /* толщина */
+    , <newFix 1 '/' 40> : t.Width
+      /* Начало и конец */
+    , (<newFix 1 '/' 6> <newFix 1 '/' 6>) : (t.X1 t.Y1)
+    , (<newFix 9 '/' 10> <newFix 6 '/' 7>) : (t.X2 t.Y2)
+      /* относительная длина острия */
+    , <newFix 1 '/' 10> : t.SpikeRel
+      /* разлёт острия, в переменной — половина разлёта */
+    , <MulF t.Width <newFix 1>> : t.SpikeWidth
+
+    , <SubF t.X2 t.X1> : t.DX
+    , <SubF t.Y2 t.Y1> : t.DY
+    , <Sqrt <AddF <Square t.DX> <Square t.DY>>> : t.Len
+
+    , <AddF t.X1 <MulF t.DX t.SpikeRel>> : t.SpikeEndX
+    , <AddF t.Y1 <MulF t.DY t.SpikeRel>> : t.SpikeEndY
+    , <MulF t.SpikeWidth <DivF t.DY t.Len>> : t.dx
+    , <MulF t.SpikeWidth <DivF t.DX t.Len>> : t.dy
+
+    , (<SubF t.SpikeEndX t.dx> <AddF t.SpikeEndY t.dy>) : t.SpikeEnd1
+    , (<AddF t.SpikeEndX t.dx> <SubF t.SpikeEndY t.dy>) : t.SpikeEnd2
+
+    = (Union
+        <MakeStick '/' t.Width (t.X1 t.Y1) t.SpikeEnd1>
+        <MakeStick '/' t.Width (t.X1 t.Y1) t.SpikeEnd2>
+        <MakeStick '/' t.Width (t.X1 t.Y1) (t.X2 t.Y2)>
+      )
 }
 
-X1 { = <SubR ((1) 2) <DX>> }
-X2 { = <AddR ((1) 2) <DX>> }
-YH { = <AddR <YL> <DY>> }
-YL { = <SubR <H> <D>> }
+CuttingSemiplane {
+  s.Color1 s.Color2
+    = <MakeSemiplane
+        (<newFix 1 '/' 3> <newFix 1>)
+        (<newFix 1> <newFix 1 '/' 3>)
+        s.Color1 s.Color2
+      >
+}
 
 $ENTRY Go {
   = <Draw
       <Width>
       (Union
-        (Circle '@' <R> <C1x> <H>)
-        (Circle '@' <R> <C2x> <H>)
         (Intersect
           '@'
-          <CalcSemiplane <X1> <YH> ((1) 2) <YL> '*' '+' AddR>
-          (FlipH ((1) 2) <CalcSemiplane <X1> <YH> ((1) 2) <YL> '*' '+' AddR>)
-          <CalcSemiplane <X2> <YH> ((1) 2) <H> '*' '-' AddR>
-         (FlipH ((1) 2) <CalcSemiplane <X2> <YH> ((1) 2) <H> '*' '-' AddR>)
+          <CuttingSemiplane ' *'>
+          <Heart>
         )
+        <Arrow>
+        <Heart>
       )
+      ('@' 255 0 0)
+      (' ' 255 255 255)
+      ('/' 51 26 0)
     >
 }
 
 Width {
-  = <Width-SwDefined <Numb <Arg 1>>>
-}
-
-Width-SwDefined {
-  0 = 80;
-  s.Width = s.Width;
+  /* пусто */
+    , <Numb <Arg 1>>
+    : {
+        0 = 400;
+        s.Width = s.Width;
+      }
 }
